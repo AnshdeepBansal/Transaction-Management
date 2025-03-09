@@ -12,7 +12,7 @@ const supabaseKey = process.env.SUPABASE_KEY ;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 app.use(cors({
-  origin: "http://localhost:5173", // Changed elsewhere
+  origin: "https://transaction-management-cyan.vercel.app/", // Changed elsewhere
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type"],
 }));
