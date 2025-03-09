@@ -49,7 +49,7 @@ function App() {
   // Fetch people and transactions on load
   useEffect(() => {
     // Fetch people
-    fetch("http://localhost:3000/people")
+    fetch("https://transaction-management-bzer.onrender.com/people")
       .then((response) => response.json())
       .then((data) => {
         console.log("People data:", data)
@@ -58,7 +58,7 @@ function App() {
       .catch((error) => console.error("Error fetching people:", error))
 
     // Fetch transactions
-    fetch("http://localhost:3000/transactions")
+    fetch("https://transaction-management-bzer.onrender.com/transactions")
       .then((response) => response.json())
       .then((data) => {
         console.log("Transaction data:", data)
@@ -99,7 +99,7 @@ function App() {
     }
 
     try {
-      const response = await fetch("http://localhost:3000/createPerson", {
+      const response = await fetch("https://transaction-management-bzer.onrender.com/createPerson", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -136,7 +136,7 @@ function App() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3000/deletePerson/${personId}`, {
+      const response = await fetch(`https://transaction-management-bzer.onrender.com/deletePerson/${personId}`, {
         method: "DELETE",
       })
 
@@ -162,7 +162,7 @@ function App() {
     }
 
     try {
-      const response = await fetch("http://localhost:3000/createTransaction", {
+      const response = await fetch("https://transaction-management-bzer.onrender.com/createTransaction", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -204,7 +204,7 @@ function App() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3000/deleteTransaction/${transactionId}`, {
+      const response = await fetch(`https://transaction-management-bzer.onrender.com/deleteTransaction/${transactionId}`, {
         method: "DELETE",
       })
 
