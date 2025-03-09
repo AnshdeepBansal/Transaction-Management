@@ -1,5 +1,3 @@
-"use client"
-
 import { useEffect, useState } from "react"
 import "./App.css"
 import jsPDF from "jspdf"
@@ -14,7 +12,8 @@ interface Person {
 interface Transaction {
   transaction_id: number
   person_id: number
-  person_name: string // For display purposes
+  people?: { name: string }
+  person_name?: string
   amount: number
   is_give: boolean
   payment_mode: string
@@ -63,7 +62,30 @@ function App() {
       .then((response) => response.json())
       .then((data) => {
         console.log("Transaction data:", data)
-        setTransactions(data)
+        // Process transactions to ensure person_name is available
+        const processedData = data.map((transaction: Transaction) => {
+          // If person_name is already provided by the backend, use it
+          if (transaction.person_name) {
+            return transaction
+          }
+
+          // Otherwise, try to extract it from the people object
+          if (transaction.people && transaction.people.name) {
+            return {
+              ...transaction,
+              person_name: transaction.people.name,
+            }
+          }
+
+          // If neither is available, find the person in our people state
+          const person = people.find((p) => p.person_id === transaction.person_id)
+          return {
+            ...transaction,
+            person_name: person ? person.name : "Unknown",
+          }
+        })
+
+        setTransactions(processedData)
       })
       .catch((error) => console.error("Error fetching transactions:", error))
   }, [])
@@ -281,28 +303,50 @@ function App() {
     doc.setFontSize(14)
     doc.text("Transactions", 14, 40)
 
+    // Prepare data with custom styling
+    const tableData = getSortedTransactions().map((transaction) => {
+      const isNegative = transaction.is_give
+      return {
+        id: transaction.transaction_id,
+        person: transaction.person_name || "Unknown",
+        amount: `${transaction.is_give ? "-" : "+"}${transaction.amount}`,
+        mode: transaction.payment_mode,
+        reason: transaction.reason || "-",
+        date: new Date(transaction.transaction_date).toLocaleString(),
+        isNegative: isNegative, // Add this flag for styling
+      }
+    })
+
+    // Create the table
     autoTable(doc, {
       startY: 45,
       head: [["ID", "Person", "Amount", "Mode", "Reason", "Date"]],
-      body: getSortedTransactions().map((transaction) => [
-        transaction.transaction_id,
-        transaction.person_name,
-        `${transaction.is_give ? "-" : "+"}${transaction.amount}`,
-        transaction.payment_mode,
-        transaction.reason || "-",
-        new Date(transaction.transaction_date).toLocaleString(),
-      ]),
+      body: tableData.map((row) => [row.id, row.person, row.amount, row.mode, row.reason, row.date]),
       styles: {
         cellPadding: 3,
       },
-      columnStyles: {
-        2: {
-          textColor: (cell: any, data: any) => {
-            cell
-            const text = data.cell.text[0] as string
-            return text.startsWith("-") ? [255, 0, 0] : [0, 128, 0] // Red for negative, green for positive
-          },
-        },
+      didDrawCell: (data) => {
+        // Apply text color based on the amount column (index 2)
+        if (data.section === "body" && data.column.index === 2) {
+          const rowIndex = data.row.index
+          const isNegative = tableData[rowIndex].isNegative
+
+          // Save current fill style
+          const currentFillStyle = doc.getFillColor()
+
+          // Set text color
+          if (isNegative) {
+            doc.setTextColor(255, 0, 0) // Red for negative
+          } else {
+            doc.setTextColor(0, 128, 0) // Green for positive
+          }
+
+          // Reset text color for next cells
+          doc.setTextColor(0) // Reset to black
+
+          // Restore fill style
+          doc.setFillColor(currentFillStyle)
+        }
       },
     })
 
@@ -502,11 +546,13 @@ function App() {
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All People</option>
-              {Array.from(new Set(transactions.map((t) => t.person_name))).map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
+              {Array.from(new Set(transactions.map((t) => t.person_name)))
+                .filter(Boolean)
+                .map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
             </select>
           </div>
 
@@ -557,7 +603,7 @@ function App() {
               {getSortedTransactions().map((transaction) => (
                 <tr key={transaction.transaction_id} className="hover:bg-gray-50">
                   <td className="py-2 px-4 text-gray-700">{transaction.transaction_id}</td>
-                  <td className="py-2 px-4 text-gray-700">{transaction.person_name}</td>
+                  <td className="py-2 px-4 text-gray-700">{transaction.person_name || "Unknown"}</td>
                   <td className={`py-2 px-4 font-medium ${transaction.is_give ? "text-red-600" : "text-green-600"}`}>
                     {transaction.is_give ? "-" : "+"}₹{transaction.amount}
                   </td>
@@ -590,4 +636,3 @@ function App() {
 }
 
 export default App
-
